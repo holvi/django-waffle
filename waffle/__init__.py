@@ -6,7 +6,7 @@ import random
 from waffle.utils import get_setting, keyfmt
 
 
-VERSION = (0, 11, 'post0', 'dev2')
+VERSION = (0, 11, 'post0', 'dev3')
 __version__ = '.'.join(map(str, VERSION))
 
 
@@ -22,6 +22,15 @@ def set_flag(request, flag_name, active=True, session_only=False):
     if not hasattr(request, 'waffles'):
         request.waffles = {}
     request.waffles[flag_name] = [active, session_only]
+
+
+callbacks = {}
+
+
+def add_callback(flag_name, func):
+    if flag_name not in callbacks:
+        callbacks[flag_name] = []
+    callbacks[flag_name].append(func)
 
 
 def flag_is_active(request, flag_name):
@@ -108,6 +117,9 @@ def flag_is_active(request, flag_name):
             return True
         set_flag(request, flag_name, False, flag.rollout)
 
+    for callback in callbacks.get(flag_name, ()):
+        if callback(request, flag):
+            return True
     return False
 
 
