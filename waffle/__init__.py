@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+from collections import defaultdict
 from decimal import Decimal
 import random
 
@@ -24,12 +25,10 @@ def set_flag(request, flag_name, active=True, session_only=False):
     request.waffles[flag_name] = [active, session_only]
 
 
-callbacks = {}
+callbacks = defaultdict(list)
 
 
 def add_callback(flag_name, func):
-    if flag_name not in callbacks:
-        callbacks[flag_name] = []
     callbacks[flag_name].append(func)
 
 
@@ -117,7 +116,7 @@ def flag_is_active(request, flag_name):
             return True
         set_flag(request, flag_name, False, flag.rollout)
 
-    for callback in callbacks.get(flag_name, ()):
+    for callback in callbacks[flag_name]:
         if callback(request, flag):
             return True
     return False
