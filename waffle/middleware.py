@@ -9,6 +9,7 @@ class WaffleMiddleware(object):
     def process_response(self, request, response):
         secure = get_setting('SECURE')
         max_age = get_setting('MAX_AGE')
+        domain = get_setting('COOKIE_DOMAIN')
 
         if hasattr(request, 'waffles'):
             for k in request.waffles:
@@ -20,7 +21,7 @@ class WaffleMiddleware(object):
                 else:
                     age = max_age
                 response.set_cookie(name, value=active, max_age=age,
-                                    secure=secure)
+                                    domain=domain, secure=secure)
         if hasattr(request, 'waffle_tests'):
             for k in request.waffle_tests:
                 name = smart_str(get_setting('TEST_COOKIE') % k)

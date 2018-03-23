@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 
 COOKIE = 'dwf_%s'
+COOKIE_DOMAIN = None
 TEST_COOKIE = 'dwft_%s'
 SECURE = True
 MAX_AGE = 2592000  # 1 month in seconds
