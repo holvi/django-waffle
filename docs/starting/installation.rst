@@ -23,7 +23,7 @@ Waffle is also available `on GitHub`_. In general, ``master`` should be
 stable, but use caution depending on unreleased versions.
 
 .. _hosted on PyPI: http://pypi.python.org/pypi/django-waffle
-.. _on GitHub: https://github.com/jsocol/django-waffle
+.. _on GitHub: https://github.com/django-waffle/django-waffle
 
 
 .. _installation-settings:
@@ -87,28 +87,12 @@ With jingo_, add it to the ``JINJA_CONFIG['extensions']`` list::
     }
 
 
-.. _installation-settings-south:
-
-South Migrations
-----------------
-
-If you're using South_ for database migrations, you'll need to add
-Waffle to the ``SOUTH_MIGRATION_MODULES`` setting, as well::
-
-    SOUTH_MIGRATION_MODULES = {
-        # ...
-        'waffle': 'waffle.south_migrations',
-        # ...
-    }
-
-
 Database Schema
 ===============
 
-Waffle includes both South_ migrations and `Django migrations`_ for
-creating the correct database schema. If using South or Django >= 1.7,
-simply run the ``migrate`` management command after adding Waffle to
-``INSTALLED_APPS``:
+Waffle includes `Django migrations`_ for creating the correct database
+schema. If using Django >= 1.7, simply run the ``migrate`` management
+command after adding Waffle to ``INSTALLED_APPS``:
 
 .. code-block:: shell
 
@@ -117,7 +101,6 @@ simply run the ``migrate`` management command after adding Waffle to
 If you're using a version of Django without migrations, you can run
 ``syncdb`` to create the Waffle tables.
 
-.. _South: http://south.aeracode.org/
 .. _Django migrations: https://docs.djangoproject.com/en/dev/topics/migrations/
 .. _django-jinja: https://pypi.python.org/pypi/django-jinja/
 .. _jingo: http://jingo.readthedocs.org/

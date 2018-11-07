@@ -3,14 +3,14 @@ from __future__ import unicode_literals
 from decimal import Decimal
 
 from django.contrib.auth.models import AnonymousUser
-from django.test import TestCase, RequestFactory
+from django.test import TransactionTestCase, RequestFactory
 
 import waffle
-from waffle.models import Switch, Flag, Sample
+from waffle.models import Switch, Sample
 from waffle.testutils import override_switch, override_flag, override_sample
 
 
-class OverrideSwitchTests(TestCase):
+class OverrideSwitchTests(TransactionTestCase):
     def test_switch_existed_and_was_active(self):
         Switch.objects.create(name='foo', active=True)
 
@@ -94,9 +94,9 @@ def req():
     return r
 
 
-class OverrideFlagTests(TestCase):
+class OverrideFlagTests(TransactionTestCase):
     def test_flag_existed_and_was_active(self):
-        Flag.objects.create(name='foo', everyone=True)
+        waffle.get_waffle_flag_model().objects.create(name='foo', everyone=True)
 
         with override_flag('foo', active=True):
             assert waffle.flag_is_active(req(), 'foo')
@@ -104,10 +104,10 @@ class OverrideFlagTests(TestCase):
         with override_flag('foo', active=False):
             assert not waffle.flag_is_active(req(), 'foo')
 
-        assert Flag.objects.get(name='foo').everyone
+        assert waffle.get_waffle_flag_model().objects.get(name='foo').everyone
 
     def test_flag_existed_and_was_inactive(self):
-        Flag.objects.create(name='foo', everyone=False)
+        waffle.get_waffle_flag_model().objects.create(name='foo', everyone=False)
 
         with override_flag('foo', active=True):
             assert waffle.flag_is_active(req(), 'foo')
@@ -115,10 +115,10 @@ class OverrideFlagTests(TestCase):
         with override_flag('foo', active=False):
             assert not waffle.flag_is_active(req(), 'foo')
 
-        assert Flag.objects.get(name='foo').everyone is False
+        assert waffle.get_waffle_flag_model().objects.get(name='foo').everyone is False
 
     def test_flag_existed_and_was_null(self):
-        Flag.objects.create(name='foo', everyone=None)
+        waffle.get_waffle_flag_model().objects.create(name='foo', everyone=None)
 
         with override_flag('foo', active=True):
             assert waffle.flag_is_active(req(), 'foo')
@@ -126,10 +126,10 @@ class OverrideFlagTests(TestCase):
         with override_flag('foo', active=False):
             assert not waffle.flag_is_active(req(), 'foo')
 
-        assert Flag.objects.get(name='foo').everyone is None
+        assert waffle.get_waffle_flag_model().objects.get(name='foo').everyone is None
 
     def test_flag_did_not_exist(self):
-        assert not Flag.objects.filter(name='foo').exists()
+        assert not waffle.get_waffle_flag_model().objects.filter(name='foo').exists()
 
         with override_flag('foo', active=True):
             assert waffle.flag_is_active(req(), 'foo')
@@ -137,10 +137,10 @@ class OverrideFlagTests(TestCase):
         with override_flag('foo', active=False):
             assert not waffle.flag_is_active(req(), 'foo')
 
-        assert not Flag.objects.filter(name='foo').exists()
+        assert not waffle.get_waffle_flag_model().objects.filter(name='foo').exists()
 
 
-class OverrideSampleTests(TestCase):
+class OverrideSampleTests(TransactionTestCase):
     def test_sample_existed_and_was_100(self):
         Sample.objects.create(name='foo', percent='100.0')
 
@@ -190,7 +190,7 @@ class OverrideSampleTests(TestCase):
 
 
 @override_switch('foo', active=False)
-class OverrideSwitchOnClassTests(TestCase):
+class OverrideSwitchOnClassTests(TransactionTestCase):
     def setUp(self):
         assert not Switch.objects.filter(name='foo').exists()
         Switch.objects.create(name='foo', active=True)
@@ -200,17 +200,17 @@ class OverrideSwitchOnClassTests(TestCase):
 
 
 @override_flag('foo', active=False)
-class OverrideFlagOnClassTests(TestCase):
+class OverrideFlagOnClassTests(TransactionTestCase):
     def setUp(self):
-        assert not Flag.objects.filter(name='foo').exists()
-        Flag.objects.create(name='foo', everyone=True)
+        assert not waffle.get_waffle_flag_model().objects.filter(name='foo').exists()
+        waffle.get_waffle_flag_model().objects.create(name='foo', everyone=True)
 
     def test_undecorated_method_is_set_properly_for_flag(self):
         self.assertFalse(waffle.flag_is_active(req(), 'foo'))
 
 
 @override_sample('foo', active=False)
-class OverrideSampleOnClassTests(TestCase):
+class OverrideSampleOnClassTests(TransactionTestCase):
     def setUp(self):
         assert not Sample.objects.filter(name='foo').exists()
         Sample.objects.create(name='foo', percent='100.0')
