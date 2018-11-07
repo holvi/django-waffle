@@ -8,7 +8,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('waffle', '0002_auto_20161201_0958'),
+        ('waffle', '0003_auto_20161201_0958'),
     ]
 
     operations = [
