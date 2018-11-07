@@ -1,9 +1,13 @@
 from __future__ import unicode_literals
 
-from django.utils.deprecation import MiddlewareMixin
 from django.utils.encoding import smart_str
 
 from waffle.utils import get_setting
+
+try:
+    from django.utils.deprecation import MiddlewareMixin
+except ImportError:
+    MiddlewareMixin = object  # fallback for Django < 1.10
 
 
 class WaffleMiddleware(MiddlewareMixin):

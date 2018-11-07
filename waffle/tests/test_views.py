@@ -1,6 +1,9 @@
 from __future__ import unicode_literals
 
-from django.urls import reverse
+try:
+    from django.urls import reverse
+except ImportError:
+    from django.core.urlresolvers import reverse
 
 from waffle import get_waffle_flag_model
 from waffle.models import Sample, Switch

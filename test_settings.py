@@ -1,5 +1,9 @@
 import os
+import django
 
+from distutils.version import StrictVersion
+
+DJANGO_VERSION = StrictVersion(django.get_version())
 
 # Make filepaths relative to settings.
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -48,15 +52,21 @@ INSTALLED_APPS = (
     'test_app',
 )
 
-MIDDLEWARE = (
+_MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'waffle.middleware.WaffleMiddleware',
 )
 
+if DJANGO_VERSION < StrictVersion('1.10.0'):
+    MIDDLEWARE_CLASSES = _MIDDLEWARE_CLASSES
+else:
+    MIDDLEWARE = _MIDDLEWARE_CLASSES
 
 ROOT_URLCONF = 'test_app.urls'
+
+CUSTOM_USER_MODEL = 'auth.User'
 
 _CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',

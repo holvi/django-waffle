@@ -20,6 +20,7 @@ from test_app.models import CompanyAwareFlag, Company
 from waffle.middleware import WaffleMiddleware
 from waffle.models import Sample, Switch
 from waffle.tests.base import TestCase
+from waffle.utils import is_authenticated
 
 
 def get(**kw):
@@ -180,7 +181,7 @@ class WaffleTests(TestCase):
         assert 'dwf_myflag' not in response.cookies
 
         request.user = get_user_model()(username='foo')
-        assert request.user.is_authenticated
+        assert is_authenticated(request.user)
         response = process_request(request, views.flag_in_view)
         self.assertEqual(b'on', response.content)
         assert 'dwf_myflag' not in response.cookies
@@ -196,7 +197,7 @@ class WaffleTests(TestCase):
         assert 'dwf_myflag' not in response.cookies
 
         request.user = get_user_model()(username='foo')
-        assert request.user.is_authenticated
+        assert is_authenticated(request.user)
         response = process_request(request, views.flag_in_view)
         self.assertEqual(b'on', response.content)
         assert 'dwf_myflag' not in response.cookies
@@ -213,7 +214,7 @@ class WaffleTests(TestCase):
         assert 'dwf_myflag' not in response.cookies
 
         request.user = get_user_model()(username='foo')
-        assert request.user.is_authenticated
+        assert is_authenticated(request.user)
         response = process_request(request, views.flag_in_view)
         self.assertEqual(b'off', response.content)
         assert 'dwf_myflag' not in response.cookies
