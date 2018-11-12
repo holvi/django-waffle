@@ -92,7 +92,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='flag',
             name='users',
-            field=models.ManyToManyField(blank=True, help_text='Activate this flag for these users.', to=settings.AUTH_USER_MODEL, verbose_name='Users'),
+            field=models.ManyToManyField(blank=True, help_text='Activate this flag for these users.', to=settings.CUSTOM_USER_MODEL, verbose_name='Users'),
         ),
         migrations.AlterField(
             model_name='sample',
