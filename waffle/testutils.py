@@ -1,12 +1,19 @@
 from __future__ import unicode_literals
 
+import sys
+import types
 from functools import wraps
 
-from waffle.compat import CLASS_TYPES
-from waffle.models import Flag, Switch, Sample
+from waffle import get_waffle_flag_model
+from waffle.models import Switch, Sample
 
 
 __all__ = ['override_flag', 'override_sample', 'override_switch']
+PY3 = sys.version_info[0] == 3
+if PY3:
+    CLASS_TYPES = (type,)
+else:
+    CLASS_TYPES = (type, types.ClassType)
 
 
 class _overrider(object):
@@ -93,17 +100,21 @@ class override_switch(_overrider):
     cls = Switch
 
     def update(self, active):
-        self.cls.objects.filter(pk=self.obj.pk).update(active=active)
+        obj = self.cls.objects.get(pk=self.obj.pk)
+        obj.active = active
+        obj.save()
 
     def get_value(self):
         return self.obj.active
 
 
 class override_flag(_overrider):
-    cls = Flag
+    cls = get_waffle_flag_model()
 
     def update(self, active):
-        self.cls.objects.filter(pk=self.obj.pk).update(everyone=active)
+        obj = self.cls.objects.get(pk=self.obj.pk)
+        obj.everyone = active
+        obj.save()
 
     def get_value(self):
         return self.obj.everyone
@@ -127,7 +138,9 @@ class override_sample(_overrider):
             p = 0.0
         else:
             p = active
-        self.cls.objects.filter(pk=self.obj.pk).update(percent='{0}'.format(p))
+        obj = self.cls.objects.get(pk=self.obj.pk)
+        obj.percent = '{0}'.format(p)
+        obj.save()
 
     def get_value(self):
         p = self.obj.percent

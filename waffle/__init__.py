@@ -1,153 +1,50 @@
 from __future__ import unicode_literals
 
-from collections import defaultdict
-from decimal import Decimal
-import random
+from django.core.exceptions import ImproperlyConfigured
 
-from waffle.utils import get_setting, keyfmt
+from waffle.utils import get_cache, get_setting, keyfmt
+from django.apps import apps as django_apps
 
-
-VERSION = (0, 11, 'post0', 'dev4')
+VERSION = (0, 15, 'post0', 'dev1')
 __version__ = '.'.join(map(str, VERSION))
 
 
-class DoesNotExist(object):
-    """The record does not exist."""
-    @property
-    def active(self):
-        return get_setting('SWITCH_DEFAULT')
-
-
-def set_flag(request, flag_name, active=True, session_only=False):
-    """Set a flag value on a request object."""
-    if not hasattr(request, 'waffles'):
-        request.waffles = {}
-    request.waffles[flag_name] = [active, session_only]
-
-
-callbacks = defaultdict(list)
-
-
-def add_callback(flag_name, func):
-    callbacks[flag_name].append(func)
-
-
 def flag_is_active(request, flag_name):
-    from .models import cache_flag, Flag
-    from .compat import cache
-
-    flag = cache.get(keyfmt(get_setting('FLAG_CACHE_KEY'), flag_name))
-    if flag is None:
-        try:
-            flag = Flag.objects.get(name=flag_name)
-            cache_flag(instance=flag)
-        except Flag.DoesNotExist:
-            return get_setting('FLAG_DEFAULT')
-
-    if get_setting('OVERRIDE'):
-        if flag_name in request.GET:
-            return request.GET[flag_name] == '1'
-
-    if flag.everyone:
-        return True
-    elif flag.everyone is False:
-        return False
-
-    if flag.testing:  # Testing mode is on.
-        tc = get_setting('TEST_COOKIE') % flag_name
-        if tc in request.GET:
-            on = request.GET[tc] == '1'
-            if not hasattr(request, 'waffle_tests'):
-                request.waffle_tests = {}
-            request.waffle_tests[flag_name] = on
-            return on
-        if tc in request.COOKIES:
-            return request.COOKIES[tc] == 'True'
-
-    user = request.user
-
-    if flag.authenticated and user.is_authenticated():
-        return True
-
-    if flag.staff and user.is_staff:
-        return True
-
-    if flag.superusers and user.is_superuser:
-        return True
-
-    if flag.languages:
-        languages = flag.languages.split(',')
-        if (hasattr(request, 'LANGUAGE_CODE') and
-                request.LANGUAGE_CODE in languages):
-            return True
-
-    flag_users = cache.get(keyfmt(get_setting('FLAG_USERS_CACHE_KEY'),
-                                              flag.name))
-    if flag_users is None:
-        flag_users = flag.users.all()
-        cache_flag(instance=flag)
-    if user in flag_users:
-        return True
-
-    flag_groups = cache.get(keyfmt(get_setting('FLAG_GROUPS_CACHE_KEY'),
-                                   flag.name))
-    if flag_groups is None:
-        flag_groups = flag.groups.all()
-        cache_flag(instance=flag)
-    user_groups = user.groups.all()
-    for group in flag_groups:
-        if group in user_groups:
-            return True
-
-    if flag.percent and flag.percent > 0:
-        if not hasattr(request, 'waffles'):
-            request.waffles = {}
-        elif flag_name in request.waffles:
-            return request.waffles[flag_name][0]
-
-        cookie = get_setting('COOKIE') % flag_name
-        if cookie in request.COOKIES:
-            flag_active = (request.COOKIES[cookie] == 'True')
-            set_flag(request, flag_name, flag_active, flag.rollout)
-            return flag_active
-
-        if Decimal(str(random.uniform(0, 100))) <= flag.percent:
-            set_flag(request, flag_name, True, flag.rollout)
-            return True
-        set_flag(request, flag_name, False, flag.rollout)
-
-    for callback in callbacks[flag_name]:
-        if callback(request, flag):
-            return True
-    return False
+    flag = get_waffle_flag_model().get(flag_name)
+    return flag.is_active(request)
 
 
 def switch_is_active(switch_name):
-    from .models import cache_switch, Switch
-    from .compat import cache
+    from .models import Switch
 
-    switch = cache.get(keyfmt(get_setting('SWITCH_CACHE_KEY'), switch_name))
-    if switch is None:
-        try:
-            switch = Switch.objects.get(name=switch_name)
-            cache_switch(instance=switch)
-        except Switch.DoesNotExist:
-            switch = DoesNotExist()
-            switch.name = switch_name
-            cache_switch(instance=switch)
-    return switch.active
+    switch = Switch.get(switch_name)
+    return switch.is_active()
 
 
 def sample_is_active(sample_name):
-    from .models import cache_sample, Sample
-    from .compat import cache
+    from .models import Sample
 
-    sample = cache.get(keyfmt(get_setting('SAMPLE_CACHE_KEY'), sample_name))
-    if sample is None:
-        try:
-            sample = Sample.objects.get(name=sample_name)
-            cache_sample(instance=sample)
-        except Sample.DoesNotExist:
-            return get_setting('SAMPLE_DEFAULT')
+    sample = Sample.get(sample_name)
+    return sample.is_active()
 
-    return Decimal(str(random.uniform(0, 100))) <= sample.percent
+
+def get_waffle_flag_model():
+    """
+    Returns the waffle Flag model that is active in this project.
+    """
+    # Add backwards compatibility by not requiring adding of WAFFLE_FLAG_MODEL
+    # for everyone who upgrades.
+    # At some point it would be helpful to require this to be defined explicitly,
+    # but no for now, to remove pain form upgrading.
+    flag_model_name = get_setting('FLAG_MODEL', 'waffle.Flag')
+
+    try:
+        return django_apps.get_model(flag_model_name)
+    except ValueError:
+        raise ImproperlyConfigured("WAFFLE_FLAG_MODEL must be of the form 'app_label.model_name'")
+    except LookupError:
+        raise ImproperlyConfigured(
+            "WAFFLE_FLAG_MODEL refers to model '{}' that has not been installed".format(
+                flag_model_name
+            )
+        )

@@ -16,6 +16,14 @@ behavior.
     ``False``.  Set this to ``True`` to make Waffle consider undefined
     flags ``True``.  Defaults to ``False``.
 
+``WAFFLE_FLAG_MODEL``
+    The model that will be use to keep track of flags. Defaults to ``waffle.Flag``
+    which allows user- and group-based flags. Can be swapped for a different Flag model
+    that allows flagging based on other things, such as an organization or a company
+    that a user belongs to. Analogous functionality to Django's extendable User models.
+    Needs to be set at the start of a project, as the Django migrations framework does not
+    support changing swappable models after the initial migration.
+
 ``WAFFLE_SWITCH_DEFAULT``
     When a Switch is undefined in the database, Waffle considers it
     ``False``.  Set this to ``True`` to make Waffle consider undefined
@@ -29,6 +37,15 @@ behavior.
 ``WAFFLE_MAX_AGE``
     How long should Waffle cookies last? (Integer, in seconds.) Defaults
     to ``2529000`` (one month).
+
+``WAFFLE_READ_FROM_WRITE_DB``
+    When calling ``*_is_active`` methods, Waffle attempts to retrieve a cached
+    version of the object, falling back to the database if necessary. In high-
+    traffic scenarios with multiple databases (e.g. a primary being replicated
+    to a readonly pool) this introduces the risk that a stale version of the
+    object might be cached if one of these methods is called immediately after
+    an update. Set this to ``True`` to ensure Waffle always reads Flags,
+    Switches, and Samples from the DB configured for writes on cache misses.
 
 ``WAFFLE_OVERRIDE``
     Allow *all* Flags to be controlled via the querystring (to allow
@@ -45,3 +62,19 @@ behavior.
 
 ``WAFFLE_CACHE_NAME``
     Which cache to use. Defaults to ``'default'``.
+
+``WAFFLE_CREATE_MISSING_FLAGS``
+    If Waffle encounters a reference to a flag that is not in the database, should Waffle create the flag?
+    If true new flags are created and set to the value of ``WAFFLE_FLAG_DEFAULT``
+    Defaults to ``False``.
+
+``WAFFLE_CREATE_MISSING_SWITCHES``
+    If Waffle encounters a reference to a switch that is not in the database, should Waffle create the sample?
+    If true new switchs are created and set to the value of ``WAFFLE_SWITCH_DEFAULT``
+    Defaults to ``False``.
+
+``WAFFLE_CREATE_MISSING_SAMPLES``
+    If Waffle encounters a reference to a sample that is not in the database, should Waffle create the sample?
+    If true new samples are created and set to the value of ``WAFFLE_SAMPLE_DEFAULT``
+    Defaults to ``False``.
+    
