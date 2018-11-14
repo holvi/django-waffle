@@ -5,7 +5,7 @@ from django.core.exceptions import ImproperlyConfigured
 from waffle.utils import get_cache, get_setting, keyfmt
 from django.apps import apps as django_apps
 
-VERSION = (0, 15, 'post0', 'dev1')
+VERSION = (0, 15, 'post0', 'dev2')
 __version__ = '.'.join(map(str, VERSION))
 
 
